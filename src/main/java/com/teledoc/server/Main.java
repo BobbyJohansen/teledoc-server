@@ -1,7 +1,17 @@
 package com.teledoc.server;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
+import com.google.gson.Gson;
+import com.teledoc.common.communication.TeleDocMessage;
 
 import eu.hgross.blaubot.core.Blaubot;
 import eu.hgross.blaubot.core.BlaubotFactory;
@@ -14,28 +24,62 @@ import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
 public class Main {
 	public static final UUID TELEDOC_UUID = UUID.fromString("3ef00e98-a42e-4d71-acc7-c9d5bde24c90");
 	
+	public final EntityManagerFactory mEmFactory;
+	
 	public static void main(String[] args) {
 		System.out.println("Teledoc server startup");
 		System.out.println("Teledoc UUID: " + TELEDOC_UUID);
-
+		
 		Main main = new Main();
+		main.connectDb();
 		main.startNetworking();
+	}
+	
+	public Main() {
+		mEmFactory = Persistence.createEntityManagerFactory("default");
+	}
+	
+	public void connectDb() {
+		EntityManager em = mEmFactory.createEntityManager();
+		
+		if (1 == 1 ) {
+			return;
+		}
+		em.getTransaction().begin();
+	    List<TeleDocMessage> msgs = em.createQuery("SELECT m FROM TeleDocMessage m ORDER BY m.timestamp", TeleDocMessage.class).getResultList();
+	    for (TeleDocMessage m : msgs) {
+	    	System.out.println("msg: " + m.getUuid() + "@" + m.getTimestamp() + ":" + new Gson().toJson(m.getData()));
+	    }
+		
+		TeleDocMessage tdm = new TeleDocMessage();
+		Random r = new Random();
+		ArrayList<Double> dbls = new ArrayList<>();
+		for (int i = 0 ; i < 100; i++) {
+			dbls.add(r.nextDouble() * 10);
+		}
+		tdm.setData(dbls);
+		em.persist(tdm);
+		em.getTransaction().commit();
 	}
 	
 	public void startNetworking() {
 		System.out.println("startNetworking >>>");
 		Blaubot bb = BlaubotFactory.createEthernetBlaubot(TELEDOC_UUID);
+		Gson gson = new Gson();
 
 		// create the channel
 		final IBlaubotChannel channel = bb.createChannel((short)1);
 
-        channel.publish("Hello world!".getBytes());
-
 		channel.subscribe(new IBlaubotMessageListener() {
 			@Override
 		    public void onMessage(BlaubotMessage message) {
-		        String msg = new String(message.getPayload());
+				String msg = new String(message.getPayload());
 		        System.out.println("msg received: " + msg);
+		        TeleDocMessage tdm = gson.fromJson(msg, TeleDocMessage.class);
+				EntityManager em = mEmFactory.createEntityManager();
+		        em.getTransaction().begin();
+		        em.persist(tdm);
+		        em.getTransaction().commit();
 		    }
 		});
 		

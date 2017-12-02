@@ -13,6 +13,11 @@
     
   <dependencies>
 <dependency>
+    <groupId>com.teledoc</groupId>
+    <artifactId>teledoc-common</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+<dependency>
     <groupId>eu.hgross</groupId>
     <artifactId>blaubot</artifactId>
     <version>2.0.0-beta.2</version>
@@ -21,6 +26,21 @@
     <groupId>eu.hgross</groupId>
     <artifactId>blaubot-websockets</artifactId>
     <version>2.0.0-beta.2</version>
+</dependency>
+      <dependency>
+        <groupId>org.eclipse.persistence</groupId>
+        <artifactId>eclipselink</artifactId>
+        <version>2.6.1</version>
+      </dependency>
+      <dependency>
+        <groupId>postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>9.1-901.jdbc4</version>
+      </dependency>
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.8.2</version>
 </dependency>
   </dependencies>
 </project>
