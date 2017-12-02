@@ -67,10 +67,10 @@ public class Main {
 		Blaubot bb = BlaubotFactory.createEthernetBlaubot(TELEDOC_UUID);
 		Gson gson = new Gson();
 
-		// create the channel
-		final IBlaubotChannel channel = bb.createChannel((short)1);
+		final IBlaubotChannel rawDataChannel = bb.createChannel((short)1);
+		final IBlaubotChannel processedDataChannel = bb.createChannel((short)2);
 
-		channel.subscribe(new IBlaubotMessageListener() {
+		rawDataChannel.subscribe(new IBlaubotMessageListener() {
 			@Override
 		    public void onMessage(BlaubotMessage message) {
 				String msg = new String(message.getPayload());
@@ -80,6 +80,7 @@ public class Main {
 		        em.getTransaction().begin();
 		        em.persist(tdm);
 		        em.getTransaction().commit();
+//		        processedDataChannel.publish(gson.toJson(msg).getBytes());
 		    }
 		});
 		
