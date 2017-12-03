@@ -5,10 +5,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.BatchPoints;
+import org.influxdb.dto.Point;
 
 import com.google.gson.Gson;
 import com.teledoc.common.communication.TeleDocMessage;
@@ -70,6 +76,11 @@ public class Main {
 		final IBlaubotChannel rawDataChannel = bb.createChannel((short)1);
 		final IBlaubotChannel processedDataChannel = bb.createChannel((short)2);
 
+		//TODO Fix
+		InfluxDB influxDB = InfluxDBFactory.connect("http://192.168.22.252:8086", "admin", "password");
+		String dbName = "teledocdb";
+		influxDB.createDatabase(dbName);
+		
 		rawDataChannel.subscribe(new IBlaubotMessageListener() {
 			@Override
 		    public void onMessage(BlaubotMessage message) {
@@ -81,7 +92,21 @@ public class Main {
 		        em.persist(tdm);
 		        em.getTransaction().commit();
 //		        processedDataChannel.publish(gson.toJson(msg).getBytes());
-		    }
+
+		        BatchPoints batchPoints = BatchPoints
+	                    .database(dbName)
+	                    .tag("async", "true")
+	                    .consistency(InfluxDB.ConsistencyLevel.ALL)
+	                    .build();
+				//create a point object
+			    Point point1 = Point.measurement(tdm.getDataType().name())
+				                    .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+				                    .addField("value", tdm.getData().get(0))
+				                    .tag("user", tdm.getPerson() + "")
+				                    .build();
+				batchPoints.point(point1);
+				influxDB.write(batchPoints);
+			}
 		});
 		
 		Thread t = new Thread(() -> {
